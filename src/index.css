@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-anime-bg text-white font-sans antialiased;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-anime-surface;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-anime-card rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-anime-accent;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-anime-accent hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors duration-200 cursor-pointer;
+  }
+  .btn-secondary {
+    @apply bg-anime-card hover:bg-blue-800 text-white font-semibold px-4 py-2 rounded-lg transition-colors duration-200 cursor-pointer;
+  }
+  .btn-ghost {
+    @apply bg-transparent hover:bg-white/10 text-white px-3 py-1.5 rounded-lg transition-colors duration-200 cursor-pointer;
+  }
+  .input-field {
+    @apply bg-anime-surface border border-white/10 text-white placeholder-white/30 rounded-lg px-3 py-2 w-full focus:outline-none focus:border-anime-accent transition-colors duration-200;
+  }
+  .table-header {
+    @apply bg-anime-card text-white/70 text-xs font-semibold uppercase tracking-wider px-3 py-2 text-center;
+  }
+  .table-cell {
+    @apply px-3 py-2 text-sm text-center border-b border-white/5;
+  }
+  .badge-going {
+    @apply bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-finish {
+    @apply bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-waiting {
+    @apply bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-desc {
+    @apply bg-gray-500/20 text-gray-400 border border-gray-500/30 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+}
