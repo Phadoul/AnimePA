@@ -35,10 +35,10 @@
     @apply bg-anime-surface border border-white/10 text-white placeholder-white/30 rounded-lg px-3 py-2 w-full focus:outline-none focus:border-anime-accent transition-colors duration-200;
   }
   .table-header {
-    @apply bg-anime-card text-white/70 text-xs font-semibold uppercase tracking-wider px-3 py-2 text-center;
+    @apply bg-anime-card text-white/70 text-xs font-semibold uppercase tracking-wider px-2 py-1.5 text-center;
   }
   .table-cell {
-    @apply px-3 py-2 text-sm text-center border-b border-white/5;
+    @apply px-2 py-1.5 text-xs text-center border-b border-white/5;
   }
   .badge-going {
     @apply bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full text-xs font-medium;

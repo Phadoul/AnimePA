@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { LogOut, Tv, Database, PlusCircle } from 'lucide-react'
+import { LogOut, Tv, Database, PlusCircle, CalendarDays } from 'lucide-react'
 
 const TABS = [
   { id: 'viendo', label: 'Viendo', icon: Tv },
+  { id: 'horario', label: 'Horario', icon: CalendarDays },
   { id: 'bd', label: 'BD', icon: Database },
   { id: 'entrada', label: 'Entrada de datos', icon: PlusCircle },
 ]

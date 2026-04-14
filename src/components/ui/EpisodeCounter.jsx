@@ -74,17 +74,6 @@ export default function EpisodeCounter({ value = 0, total, onUpdate, disabled })
         </button>
       </div>
 
-      {/* progress bar */}
-      {pct !== null && (
-        <div className="w-full bg-white/10 rounded-full h-1 overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-300 ${
-              pct >= 100 ? 'bg-green-500' : pct > 50 ? 'bg-anime-blue' : 'bg-anime-accent'
-            }`}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      )}
     </div>
   )
 }

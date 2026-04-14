@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useAnimeList, useSeasons } from '../hooks/useAnime'
 import StatusBadge from '../components/ui/StatusBadge'
+import { getCurrentEpisodesByMalIds } from '../lib/apis/anilist'
 import { ExternalLink, RefreshCw, Search } from 'lucide-react'
 
 const ESTADOS = ['Todos', 'Going', 'Finish', 'Waiting', 'Desc']
@@ -12,6 +13,17 @@ export default function BDPage() {
 
   const { data, loading, error, refetch } = useAnimeList(filters)
 
+  const [currentEps, setCurrentEps] = useState(new Map())
+
+  useEffect(() => {
+    if (!data.length) return
+    const malIds = data
+      .map((a) => { const m = a.link_mal?.match(/\/anime\/(\d+)/); return m ? parseInt(m[1]) : null })
+      .filter(Boolean)
+    if (!malIds.length) return
+    getCurrentEpisodesByMalIds(malIds).then(setCurrentEps)
+  }, [data])
+
   const filtered = useMemo(() => {
     if (!search.trim()) return data
     const q = search.toLowerCase()
@@ -19,7 +31,7 @@ export default function BDPage() {
   }, [data, search])
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-7xl mx-auto">
       {/* Controls */}
       <div className="flex flex-wrap gap-3 items-center bg-anime-surface border border-white/10 rounded-xl px-4 py-3">
         <div className="relative flex-1 min-w-[200px]">
@@ -64,6 +76,7 @@ export default function BDPage() {
               <thead>
                 <tr className="border-b border-white/10 bg-anime-card/50">
                   <th className="table-header w-10">Ref</th>
+                  <th className="table-header w-8"></th>
                   <th className="table-header text-left min-w-[180px]">Título</th>
                   <th className="table-header w-24">Agregado</th>
                   <th className="table-header w-20">Estado</th>
@@ -78,9 +91,17 @@ export default function BDPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((anime) => (
+                {filtered.map((anime) => {
+                  const malId = anime.link_mal?.match(/\/anime\/(\d+)/)?.[1]
+                  const capActual = malId ? (currentEps.get(parseInt(malId))?.capActual ?? null) : null
+                  return (
                   <tr key={anime.id} className="hover:bg-white/5 transition-colors border-b border-white/5">
                     <td className="table-cell text-white/30">{anime.referencia}</td>
+                    <td className="table-cell p-1">
+                      {anime.imagen_url
+                        ? <img src={anime.imagen_url} alt="" className="w-6 h-9 object-cover rounded opacity-80" loading="lazy" />
+                        : <div className="w-6 h-9 rounded bg-white/5" />}
+                    </td>
                     <td className="table-cell text-left">
                       <span className="font-medium text-white">{anime.titulo}</span>
                     </td>
@@ -93,9 +114,9 @@ export default function BDPage() {
                     <td className="table-cell text-anime-accent font-medium">{anime.participantes ?? '—'}</td>
                     <td className="table-cell text-white/60">{anime.temporada ?? '—'}</td>
                     <td className="table-cell text-white/60">{anime.fecha ?? '—'}</td>
-                    <td className="table-cell text-white/60">{anime.horario ?? '—'}</td>
+                    <td className="table-cell text-white/50 text-[10px] leading-tight">{anime.horario ?? '—'}</td>
                     <td className="table-cell font-mono text-white/70">{anime.numero_episodios ?? '—'}</td>
-                    <td className="table-cell font-mono text-white/70">{anime.episodio_actual ?? '—'}</td>
+                    <td className="table-cell font-mono text-white/70">{capActual ?? '—'}</td>
                     <td className="table-cell">
                       <div className="flex items-center justify-center gap-2">
                         {anime.link_mal && (
@@ -114,7 +135,8 @@ export default function BDPage() {
                     </td>
                     <td className="table-cell text-white/60">{anime.nota_mal ?? '—'}</td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>

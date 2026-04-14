@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
-// ─── Anime list with user progress joined ────────────────────────────────────
+// ─── Anime list (global, shared by all users) ────────────────────────────────
 export function useAnimeList(filters = {}) {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -13,10 +13,7 @@ export function useAnimeList(filters = {}) {
 
     let query = supabase
       .from('anime')
-      .select(`
-        *,
-        progress:user_progress(*)
-      `)
+      .select('*')
       .order('referencia', { ascending: false })
 
     if (filters.estado) query = query.eq('estado', filters.estado)
@@ -34,14 +31,21 @@ export function useAnimeList(filters = {}) {
   return { data, loading, error, refetch: fetch }
 }
 
-// ─── Update episode progress for a user ──────────────────────────────────────
-export async function updateProgress(animeId, userId, newEpisode) {
+// ─── Update global episode progress ──────────────────────────────────────────
+export async function updateProgress(animeId, _userId, newEpisode) {
   const { error } = await supabase
-    .from('user_progress')
-    .upsert(
-      { anime_id: animeId, user_id: userId, episodios_vistos: newEpisode, updated_at: new Date().toISOString() },
-      { onConflict: 'anime_id,user_id' }
-    )
+    .from('anime')
+    .update({ mis_episodios: newEpisode })
+    .eq('id', animeId)
+  return { error }
+}
+
+// ─── Update anime fields ──────────────────────────────────────────────────────
+export async function updateAnime(animeId, fields) {
+  const { error } = await supabase
+    .from('anime')
+    .update(fields)
+    .eq('id', animeId)
   return { error }
 }
 

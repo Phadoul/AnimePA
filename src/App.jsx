@@ -6,6 +6,7 @@ import Layout from './components/Layout'
 import ViendoPage from './pages/ViendoPage'
 import BDPage from './pages/BDPage'
 import EntradaDatosPage from './pages/EntradaDatosPage'
+import HorarioPage from './pages/HorarioPage'
 
 function AppContent() {
   const { user, loading, recoveryMode } = useAuth()
@@ -30,6 +31,7 @@ function AppContent() {
   const renderTab = () => {
     switch (activeTab) {
       case 'viendo':  return <ViendoPage />
+      case 'horario': return <HorarioPage />
       case 'bd':      return <BDPage />
       case 'entrada': return <EntradaDatosPage />
       default:        return <ViendoPage />
