@@ -3,6 +3,7 @@ import { useAnimeList, useSeasons, updateProgress, updateAnime } from '../hooks/
 import StatusBadge from '../components/ui/StatusBadge'
 import EpisodeCounter from '../components/ui/EpisodeCounter'
 import { getCurrentEpisodesByMalIds } from '../lib/apis/anilist'
+import { getJikanById, searchJikan } from '../lib/apis/jikan'
 import { ExternalLink, RefreshCw, Filter } from 'lucide-react'
 
 const PARTICIPANT_COLOR = {
@@ -17,14 +18,39 @@ const ESTADOS_EDIT = ['Going', 'Finish', 'Waiting', 'Desc']
 
 const DAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
-function InlineText({ value, linkUrl, onSave }) {
+function InlineText({ value, linkUrl, malId, onSave }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
   const inputRef = useRef(null)
+  const committed = useRef(false)
 
-  const start = (e) => { e.preventDefault(); e.stopPropagation(); setDraft(value); setEditing(true); setTimeout(() => inputRef.current?.select(), 0) }
-  const commit = () => { setEditing(false); if (draft.trim() && draft !== value) onSave(draft.trim()) }
-  const cancel = () => { setEditing(false); setDraft(value) }
+  const start = (e) => { e.preventDefault(); e.stopPropagation(); committed.current = false; setDraft(value); setEditing(true); setTimeout(() => inputRef.current?.select(), 0) }
+  const commit = async () => {
+    if (committed.current) return
+    committed.current = true
+    setEditing(false)
+    const trimmed = draft.trim()
+    if (!trimmed) {
+      console.log('[InlineText] draft vacío → buscando título en API, malId:', malId, 'value:', value)
+      try {
+        if (malId) {
+          const data = await getJikanById(malId)
+          console.log('[InlineText] Jikan resultado:', data)
+          if (data?.titulo) { onSave(data.titulo); return }
+        }
+        if (value) {
+          const results = await searchJikan(value)
+          console.log('[InlineText] searchJikan resultado:', results)
+          if (results?.[0]?.titulo) onSave(results[0].titulo)
+        }
+      } catch (err) {
+        console.error('[InlineText] Error al obtener título:', err)
+      }
+    } else if (trimmed !== value) {
+      onSave(trimmed)
+    }
+  }
+  const cancel = () => { committed.current = true; setEditing(false); setDraft(value) }
 
   if (editing) {
     return (
@@ -280,6 +306,7 @@ export default function ViendoPage() {
                           <InlineText
                             value={anime.titulo}
                             linkUrl={anime.link_mal || null}
+                            malId={anime.link_mal ? (anime.link_mal.match(/\/anime\/(\d+)/)?.[1] ? parseInt(anime.link_mal.match(/\/anime\/(\d+)/)[1]) : null) : null}
                             onSave={(v) => handleFieldUpdate(anime.id, 'titulo', v)}
                           />
                           {anime.horario_dias && (
