@@ -18,7 +18,13 @@ export function useAnimeList(filters = {}) {
 
     if (filters.estado) query = query.eq('estado', filters.estado)
     if (filters.temporada) query = query.eq('temporada', filters.temporada)
-    if (filters.participantes) query = query.eq('participantes', filters.participantes)
+    if (filters.participantes) {
+      const allowed =
+        filters.participantes === 'Pedro'   ? ['Pedro', 'P&A'] :
+        filters.participantes === 'Asencio' ? ['Asencio', 'P&A'] :
+        [filters.participantes]
+      query = query.in('participantes', allowed)
+    }
 
     const { data: rows, error: err } = await query
     if (err) setError(err.message)

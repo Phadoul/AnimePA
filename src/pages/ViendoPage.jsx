@@ -2,8 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { useAnimeList, useSeasons, updateProgress, updateAnime } from '../hooks/useAnime'
 import StatusBadge from '../components/ui/StatusBadge'
 import EpisodeCounter from '../components/ui/EpisodeCounter'
-import { getCurrentEpisodesByMalIds } from '../lib/apis/anilist'
-import { getJikanById, searchJikan } from '../lib/apis/jikan'
+import { getCurrentEpisodesByMalIds, getAniListByMalId, searchAniList } from '../lib/apis/anilist'
 import { ExternalLink, RefreshCw, Filter } from 'lucide-react'
 
 const PARTICIPANT_COLOR = {
@@ -20,37 +19,56 @@ const DAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
 function InlineText({ value, linkUrl, malId, onSave }) {
   const [editing, setEditing] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [draft, setDraft] = useState(value)
   const inputRef = useRef(null)
-  const committed = useRef(false)
+  const skipBlur = useRef(false)
 
-  const start = (e) => { e.preventDefault(); e.stopPropagation(); committed.current = false; setDraft(value); setEditing(true); setTimeout(() => inputRef.current?.select(), 0) }
-  const commit = async () => {
-    if (committed.current) return
-    committed.current = true
+  const start = (e) => {
+    e.preventDefault(); e.stopPropagation()
+    skipBlur.current = false
+    setDraft(value)
+    setEditing(true)
+    setTimeout(() => inputRef.current?.select(), 0)
+  }
+
+  const handleEnter = async () => {
+    skipBlur.current = true  // prevent onBlur from also triggering
     setEditing(false)
     const trimmed = draft.trim()
     if (!trimmed) {
-      console.log('[InlineText] draft vacío → buscando título en API, malId:', malId, 'value:', value)
+      setLoading(true)
       try {
         if (malId) {
-          const data = await getJikanById(malId)
-          console.log('[InlineText] Jikan resultado:', data)
-          if (data?.titulo) { onSave(data.titulo); return }
+          const data = await getAniListByMalId(malId)
+          if (data?.titulo) { onSave(data.titulo); setLoading(false); return }
         }
         if (value) {
-          const results = await searchJikan(value)
-          console.log('[InlineText] searchJikan resultado:', results)
+          const results = await searchAniList(value)
           if (results?.[0]?.titulo) onSave(results[0].titulo)
         }
       } catch (err) {
         console.error('[InlineText] Error al obtener título:', err)
       }
+      setLoading(false)
     } else if (trimmed !== value) {
       onSave(trimmed)
     }
   }
-  const cancel = () => { committed.current = true; setEditing(false); setDraft(value) }
+
+  const handleBlur = () => {
+    if (skipBlur.current) { skipBlur.current = false; return }
+    setEditing(false)
+    const trimmed = draft.trim()
+    if (trimmed && trimmed !== value) onSave(trimmed)
+    // Empty on blur → just cancel, don't fetch
+  }
+
+  const cancel = () => { skipBlur.current = true; setEditing(false); setDraft(value) }
+
+  if (loading) {
+    return <span className="font-medium text-white/40 italic text-xs">Buscando...</span>
+  }
 
   if (editing) {
     return (
@@ -58,8 +76,8 @@ function InlineText({ value, linkUrl, malId, onSave }) {
         ref={inputRef}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') cancel() }}
+        onBlur={handleBlur}
+        onKeyDown={(e) => { if (e.key === 'Enter') handleEnter(); if (e.key === 'Escape') cancel() }}
         className="bg-anime-card border border-anime-accent/50 text-white rounded px-2 py-0.5 text-xs w-full focus:outline-none"
         style={{ minWidth: '180px' }}
       />

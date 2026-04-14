@@ -10,7 +10,8 @@ import HorarioPage from './pages/HorarioPage'
 
 function AppContent() {
   const { user, loading, recoveryMode } = useAuth()
-  const [activeTab, setActiveTab] = useState('viendo')
+  const [activeTab, setActiveTab] = useState('horario')
+  const [showLogin, setShowLogin] = useState(false)
 
   if (loading) {
     return (
@@ -24,8 +25,16 @@ function AppContent() {
     return <ResetPasswordPage />
   }
 
+  // Not logged in — show Horario publicly, with optional login overlay
   if (!user) {
-    return <LoginPage />
+    return (
+      <>
+        <Layout activeTab={activeTab} onTabChange={setActiveTab} onLogin={() => setShowLogin(true)}>
+          <HorarioPage />
+        </Layout>
+        {showLogin && <LoginPage onCancel={() => setShowLogin(false)} />}
+      </>
+    )
   }
 
   const renderTab = () => {
@@ -34,7 +43,7 @@ function AppContent() {
       case 'horario': return <HorarioPage />
       case 'bd':      return <BDPage />
       case 'entrada': return <EntradaDatosPage />
-      default:        return <ViendoPage />
+      default:        return <HorarioPage />
     }
   }
 

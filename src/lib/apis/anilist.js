@@ -186,3 +186,38 @@ export async function searchAniList(query) {
     return []
   }
 }
+
+const BY_MAL_QUERY = `
+query ($malId: Int) {
+  Media(idMal: $malId, type: ANIME) {
+    id
+    idMal
+    title { romaji english }
+    status
+    episodes
+    coverImage { large }
+    startDate { year month day }
+    season
+    seasonYear
+    averageScore
+    nextAiringEpisode { episode airingAt }
+    siteUrl
+  }
+}
+`
+
+export async function getAniListByMalId(malId) {
+  try {
+    const res = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ query: BY_MAL_QUERY, variables: { malId } }),
+    })
+    if (!res.ok) return null
+    const json = await res.json()
+    const media = json.data?.Media
+    return media ? normalizeAniList(media) : null
+  } catch {
+    return null
+  }
+}

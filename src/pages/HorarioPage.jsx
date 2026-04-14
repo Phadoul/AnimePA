@@ -1,10 +1,17 @@
 import { useState, useEffect, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, Loader2, Tv, Calendar } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, Tv, Calendar, Filter } from 'lucide-react'
 import { useAnimeList } from '../hooks/useAnime'
+import { useAuth } from '../context/AuthContext'
 import { getAiringSchedule } from '../lib/apis/anilist'
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 const DAYS_SHORT = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM']
+
+const PARTICIPANT_COLOR = {
+  'P&A': 'text-anime-accent',
+  'Pedro': 'text-purple-300',
+  'Asencio': 'text-green-300',
+}
 
 function extractMalId(linkMal) {
   if (!linkMal) return null
@@ -56,20 +63,31 @@ function toMadridDate(airingAtUnix) {
 }
 
 export default function HorarioPage() {
+  const { user } = useAuth()
   const [weekOffset, setWeekOffset] = useState(0)
   const [rawSchedule, setRawSchedule] = useState([])
   const [loadingSchedule, setLoadingSchedule] = useState(false)
+  const [filterParticipante, setFilterParticipante] = useState('')
+  const [filterEstado, setFilterEstado] = useState('Going')
 
-  const { data: allAnime, loading: loadingDB } = useAnimeList({ estado: 'Going' })
+  const { data: allAnime, loading: loadingDB } = useAnimeList({})
 
   const dbByMalId = useMemo(() => {
     const map = new Map()
     for (const a of allAnime) {
+      if (filterEstado && a.estado !== filterEstado) continue
+      if (filterParticipante) {
+        const allowed =
+          filterParticipante === 'Pedro'   ? ['Pedro', 'P&A'] :
+          filterParticipante === 'Asencio' ? ['Asencio', 'P&A'] :
+          [filterParticipante]
+        if (!allowed.includes(a.participantes)) continue
+      }
       const malId = extractMalId(a.link_mal)
       if (malId) map.set(malId, a)
     }
     return map
-  }, [allAnime])
+  }, [allAnime, filterEstado, filterParticipante])
 
   const { from, to, monday } = useMemo(() => getWeekBounds(weekOffset), [weekOffset])
 
@@ -133,6 +151,39 @@ export default function HorarioPage() {
 
   return (
     <div className="space-y-3 max-w-6xl mx-auto">
+      {/* Filters — only visible when logged in */}
+      {user && (
+      <div className="flex items-center gap-3 bg-anime-surface border border-white/10 rounded-lg px-3 py-2">
+        <Filter size={13} className="text-white/40 shrink-0" />
+        <select
+          value={filterEstado}
+          onChange={(e) => setFilterEstado(e.target.value)}
+          className="input-field w-auto text-xs py-1"
+        >
+          <option value="">Todos los estados</option>
+          <option value="Going">Going</option>
+          <option value="Finish">Finish</option>
+          <option value="Waiting">Waiting</option>
+          <option value="Desc">Desc</option>
+        </select>
+        <select
+          value={filterParticipante}
+          onChange={(e) => setFilterParticipante(e.target.value)}
+          className="input-field w-auto text-xs py-1"
+        >
+          <option value="">Todos</option>
+          <option value="P&A">P&amp;A</option>
+          <option value="Pedro">Pedro</option>
+          <option value="Asencio">Asencio</option>
+        </select>
+        {filterParticipante && (
+          <span className={`text-xs font-medium ${PARTICIPANT_COLOR[filterParticipante] ?? 'text-white'}`}>
+            {filterParticipante}
+          </span>
+        )}
+      </div>
+      )}
+
       {/* Week navigation */}
       <div className="flex items-center justify-between bg-anime-surface border border-white/10 rounded-lg px-3 py-2">
         <button
@@ -142,7 +193,6 @@ export default function HorarioPage() {
         >
           <ChevronLeft size={15} />
         </button>
-
         <div className="flex items-center gap-2 text-xs">
           <Calendar size={12} className="text-white/40" />
           <span className="text-white font-medium">{formatWeekRange()}</span>
@@ -160,7 +210,6 @@ export default function HorarioPage() {
             </button>
           )}
         </div>
-
         <button
           onClick={() => setWeekOffset((o) => Math.min(o + 1, 4))}
           disabled={weekOffset >= 4}
@@ -241,22 +290,34 @@ function AnimeCard({ entry }) {
   const title = dbAnime?.titulo || media?.title?.english || media?.title?.romaji
   const time = getMadridTime(airingAt)
   const link = dbAnime?.link_ver
+  const linkMal = dbAnime?.link_mal
+  const nota = dbAnime?.nota_mal ?? (media?.averageScore ? (media.averageScore / 10).toFixed(1) : null)
 
-  const inner = (
+  return (
     <div
       className={`relative rounded-lg overflow-hidden border border-white/10 bg-anime-card/40 transition-all group ${
-        link ? 'hover:border-anime-accent/50 cursor-pointer' : ''
+        link ? 'hover:border-anime-accent/50' : ''
       }`}
     >
-      {/* Cover */}
       <div className="w-full aspect-[3/4] bg-anime-surface relative overflow-hidden">
         {cover ? (
-          <img
-            src={cover}
-            alt={title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
-          />
+          linkMal ? (
+            <a href={linkMal} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+              <img
+                src={cover}
+                alt={title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+              />
+            </a>
+          ) : (
+            <img
+              src={cover}
+              alt={title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+            />
+          )
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white/15">
             <Tv size={16} />
@@ -266,24 +327,29 @@ function AnimeCard({ entry }) {
         <div className="absolute top-1 left-1 bg-black/70 backdrop-blur-sm text-white text-[9px] font-bold px-1 py-0.5 rounded leading-tight">
           {episode}
         </div>
+        {/* MAL score badge */}
+        {nota && (
+          <div className="absolute top-1 right-1 bg-yellow-500/80 backdrop-blur-sm text-black text-[9px] font-bold px-1 py-0.5 rounded leading-tight">
+            {nota}
+          </div>
+        )}
         {/* Time badge */}
         <div className="absolute bottom-1 right-1 bg-black/70 backdrop-blur-sm text-white/80 text-[9px] px-1 py-0.5 rounded leading-tight">
           {time}
         </div>
       </div>
-      {/* Title */}
-      <div className="px-1 py-1">
-        <p className="text-white text-[9px] font-medium leading-tight line-clamp-2">{title}</p>
-      </div>
+      {/* Title — fixed height, clipped */}
+      {link ? (
+        <a href={link} target="_blank" rel="noopener noreferrer" className="block">
+          <div className="h-8 flex items-start justify-center px-1.5 pt-1 overflow-hidden hover:bg-white/5 transition-colors">
+            <p className="text-white text-[9px] font-medium leading-tight line-clamp-2 w-full text-center">{title}</p>
+          </div>
+        </a>
+      ) : (
+        <div className="h-8 flex items-start justify-center px-1.5 pt-1 overflow-hidden">
+          <p className="text-white text-[9px] font-medium leading-tight line-clamp-2 w-full text-center">{title}</p>
+        </div>
+      )}
     </div>
   )
-
-  if (link) {
-    return (
-      <a href={link} target="_blank" rel="noopener noreferrer" className="block">
-        {inner}
-      </a>
-    )
-  }
-  return inner
 }

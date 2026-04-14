@@ -6,6 +6,12 @@ import { ExternalLink, RefreshCw, Search } from 'lucide-react'
 
 const ESTADOS = ['Todos', 'Going', 'Finish', 'Waiting', 'Desc']
 
+const PARTICIPANT_COLOR = {
+  'P&A': 'text-anime-accent',
+  'Pedro': 'text-purple-300',
+  'Asencio': 'text-green-300',
+}
+
 export default function BDPage() {
   const [filters, setFilters] = useState({ estado: '', temporada: '', participantes: '' })
   const [search, setSearch] = useState('')
@@ -111,10 +117,10 @@ export default function BDPage() {
                     <td className="table-cell">
                       <StatusBadge status={anime.estado} />
                     </td>
-                    <td className="table-cell text-anime-accent font-medium">{anime.participantes ?? '—'}</td>
+                    <td className={`table-cell font-medium ${PARTICIPANT_COLOR[anime.participantes] ?? 'text-white/60'}`}>{anime.participantes ?? '—'}</td>
                     <td className="table-cell text-white/60">{anime.temporada ?? '—'}</td>
                     <td className="table-cell text-white/60">{anime.fecha ?? '—'}</td>
-                    <td className="table-cell text-white/50 text-[10px] leading-tight">{anime.horario ?? '—'}</td>
+                    <td className="table-cell text-white/50 text-[10px] leading-tight">{anime.horario ? anime.horario.replace(/\s*\(Madrid\)/i, '') : '—'}</td>
                     <td className="table-cell font-mono text-white/70">{anime.numero_episodios ?? '—'}</td>
                     <td className="table-cell font-mono text-white/70">{capActual ?? '—'}</td>
                     <td className="table-cell">

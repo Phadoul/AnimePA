@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 
-export default function LoginPage() {
+export default function LoginPage({ onCancel }) {
   const { signIn } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -18,7 +18,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-anime-bg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onCancel ? (e) => { if (e.target === e.currentTarget) onCancel() } : undefined}>
       <div className="w-full max-w-sm">
         {/* Logo / Header */}
         <div className="text-center mb-8">
@@ -28,7 +28,10 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-anime-surface border border-white/10 rounded-2xl p-8 shadow-2xl">
+        <div className="bg-anime-surface border border-white/10 rounded-2xl p-8 shadow-2xl relative">
+          {onCancel && (
+            <button onClick={onCancel} className="absolute top-3 right-3 text-white/30 hover:text-white/70 transition-colors text-xl leading-none">✕</button>
+          )}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm text-white/60 mb-1.5">Email</label>
